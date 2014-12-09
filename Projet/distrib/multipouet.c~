@@ -1,0 +1,37 @@
+/*
+ * Q.4 - Comportement de l'objet en cas de messages reset, set ou bound
+ */
+void            multipouet_reset(t_multipouet *x);
+void            multipouet_set(t_multipouet *x, t_floatarg f);
+void            multipouet_bound(t_multipouet *x, t_floatarg min, t_floatarg max);
+
+/*
+ * Q.3 - Comportement en cas de message bang
+ */
+void            multipouet_bang(t_multipouet *x);
+
+/*
+ * Q.2 - Création d'un nouvel objet multipouet
+ */
+void            *multipouet_new(t_symbol *s, int argc, t_atom *argv){
+  t_multipouet *mp;
+  mp=(t_multipouet*)pd_new(multipouet_class);
+  mp->i_min = argc[0]
+  mp->b_out=outlet_new(&mp->x_obj,&s_symbol);
+  mp->
+
+    return (&mp);
+}
+
+
+/*
+ * Q.1 - Chargement en mémoire des objets de type multipouet
+ */
+void            multipouet_setup(void){
+  multipouet_class = class_new(gensym("multipouet"),(t_newmethod)multipouet_new,0,sizeof(t_multipouet),CLASS_PD,A_GIMME);
+  class_addmethod(multipouet_class,multipouet_reset,gensym(TYPE DE LARG);
+  class_addmethod(multipouet_class,multipouet_set);
+
+}
+
+#endif
