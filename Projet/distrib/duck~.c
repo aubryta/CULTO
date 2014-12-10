@@ -1,0 +1,47 @@
+#include "duck~.h"
+#include "m_pd.h"
+
+/*t_object        x_obj;
+    t_sample		f_pan;
+    t_sample		f;
+    t_inlet 		*x_in2;
+    t_outlet		*x_out;
+*/
+/*
+ * Q.5 - Fonction centrale effectuant le calcul
+ */
+t_int *duck_tilde_perform(t_int *w){
+  
+}
+
+/*
+ * Q.4 - Ajout de l'objet duck~ à l'arbre de traitement DSP
+ */
+void duck_tilde_dsp(t_duck_tilde *x, t_signal **sp){
+  
+}
+
+/*
+ * Q.3 - Libération de la mémoire de l'objet duck~
+ */
+void duck_tilde_free(t_duck_tilde *x){
+  
+}
+
+/*
+ * Q.2 - Création d'un nouvel objet duck~
+ */
+void *duck_tilde_new(void){
+  
+}
+
+/*
+ * Q.1 - Chargement en mémoire des objets de type duck~
+ */
+void duck_tilde_setup(void){
+  duck_tilde_class = class_new(gensym("duck_tilde"),(t_newmethod)duck_tilde_new,0,sizeof(t_duck_tilde),CLASS_MAINSIGNAL,A_GIMME,0);
+  class_addmethod(duck_tilde_class,(t_method)duck_tilde_dsp,gensym("dsp"), 0); // mettre l'argument signal
+  class_addmethod(duck_tilde_class,(t_method)duck_tilde_free,gensym("free"),0);
+  class_addmethod(duck_tilde_class,(t_method)duck_tilde_perform,gensym("perform"),A_DEFINT,0); 
+  CLASS_MAINSIGNALIN(duck_tilde_class,t_duck_tilde,f);
+}
