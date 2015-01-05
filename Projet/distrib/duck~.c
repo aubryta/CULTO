@@ -18,26 +18,26 @@ t_int *duck_tilde_perform(t_int *w){
   //w[3] pointeur vers le buffer de sortie (résultat)
   // w[4] taille des buffers, tous a la meme taille
   int taille = (int) w[5];
-  t_duck_tilde µduck =(t_duck_tilde) w[1];
-  t_sample *buff_in1 = (t_sample) w[2];
-  t_sample *buff_in2 = (t_sample) w[3];
-  t_sample *buff_out = (t_sample) w[4];
+  t_duck_tilde *duck =(t_duck_tilde*) w[1];
+  t_sample *buff_in1 = (t_sample*) w[2];
+  t_sample *buff_in2 = (t_sample*) w[3];
+  t_sample *buff_out = (t_sample*) w[4];
   int moyenne= 0;
   while (taille > 0){
-	if (buf_in2 >0)
+	if (*buff_in2 >0)
 		moyenne += *buff_in2;
 	else
 		moyenne += - *buff_in2;
 	buff_in2++;
 	taille --;
    }
-moyenne = moyenne / w[4];
-taille = w[4];
+moyenne = moyenne / w[5];
+taille = w[5];
 
 while (taille > 0){
 *buff_out =  (*buff_in1)*(1-moyenne);
-*buff_out++;
-*buff_in1++;
+buff_out++;
+buff_in1++;
 taille--;
 }
   
@@ -49,10 +49,8 @@ taille--;
  * Q.4 - Ajout de l'objet duck~ à l'arbre de traitement DSP
  */
 void duck_tilde_dsp(t_duck_tilde *x, t_signal **sp){
-  dsp_add(t_perfroutine f, int n, ...);
-  //Arguments ?
-  dsp_add(duck_tilde_perform),5,x, sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n); ); // pas sûre
-  //"on devra également indiquer les buffers necessaires"
+  dsp_add(duck_tilde_perform, 5, x,  
+          sp[0]->s_vec, sp[1]->s_vec, sp[2]->s_vec, sp[0]->s_n); 
 }
 
 /*
@@ -69,19 +67,17 @@ void duck_tilde_free(t_duck_tilde *x){
 void *duck_tilde_new(void){
    t_duck_tilde  *d;
   d = (t_duck_tilde *)pd_new(duck_tilde_class);
-  
- 
-   
-    d->x_in2 =inlet_new(&d->x_obj, &d->x_obj.ob_pd,
-            gensym("signal"), gensym("bound"));
-    d->x_out = outlet_new(&d->x_obj, &s_signal);
+      d->x_in2 =inlet_new(&d->x_obj, &d->x_obj.ob_pd,
+             &s_signal,  &s_signal);
+   d->x_out = outlet_new(&d->x_obj, &s_signal);
+   return (void*) d;
 }
 
 /*
  * Q.1 - Chargement en mémoire des objets de type duck~
  */
 void duck_tilde_setup(void){
-  duck_tilde_class = class_new(gensym("duck_tilde"),(t_newmethod)duck_tilde_new,(t_method)duck_tilde_free,sizeof(t_duck_tilde),CLASS_MAINSIGNAL,A_GIMME,0);
+  duck_tilde_class = class_new(gensym("duck~"),(t_newmethod)duck_tilde_new,(t_method)duck_tilde_free,sizeof(t_duck_tilde),CLASS_DEFAULT,A_GIMME,0);
   class_addmethod(duck_tilde_class,(t_method)duck_tilde_dsp,gensym("dsp"), 0); // mettre l'argument signal
   CLASS_MAINSIGNALIN(duck_tilde_class,t_duck_tilde,f);
 }
