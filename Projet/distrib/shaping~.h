@@ -18,7 +18,7 @@ typedef struct      _shaping_tilde
 {
     t_object        x_obj;
     t_sample		f_spec;
-    t_sample		f;
+    t_float		f;
     t_outlet		*x_out;
 	t_inlet         *x_in_mod;	// type signal
 	t_inlet         *x_in_mess;

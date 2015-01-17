@@ -3,30 +3,7 @@
 #include "m_pd.h"
 #include <stdlib.h>
 #include <math.h>
-/*
-static t_class      *shaping_tilde_class;
-typedef struct      _shaping_tilde
-{
-    t_object        x_obj;
-    t_sample		f_spec;
-    t_sample		f;
-    t_outlet		*x_out;
-	t_inlet			*x_in_harm; // type signal
-	t_inlet         *x_in_mod;	// type signal	
-	t_inlet 		*x_in_shapeWidth // type float
-	t_inlet         *x_in_mes;	// type flottant
-	
-    int             *bitshuffle;
-    float           *weighting;
-    float           *window;
-	float			*buffer;
-	int	 			tailleBuff;
-}
-t_shaping_tilde;*/
 
-/*
- * Q.5 - Fonction centrale effectuant le calcul
- */
  float distance_euclidienne(float x, float y)
 {
  return sqrtf(x * x + y * y);
@@ -38,7 +15,9 @@ void shaping_tilde_messages(t_shaping_tilde *x, t_floatarg n, t_floatarg p)
  x->bypass   = p;
 }
 
-
+/*
+ * Q.5 - Fonction centrale effectuant le calcul
+ */
 t_int           *shaping_tilde_perform(t_int *w){
 	/*
 	w[1] Pointeur vers l’objet shaping
@@ -53,45 +32,39 @@ t_int           *shaping_tilde_perform(t_int *w){
   float shapeWidth = (float)x->f;
   t_sample *buff_out = (t_sample*) w[4];
   int taille = (int) w[5];
+  taille = 2048;
   t_sample*dup_harmonie = malloc (taille * sizeof (long int));
   t_sample*dup_mod = malloc (taille * sizeof (long int));
   int i =0;
   int j =0;
+  float ampSum,freqSum,factor;
   if (x->bypass==1){
     for ( i = 0 ; i < taille ; i++)
 		  buff_out[i] = buff_in_harmonie[i];
 	  return w+6;
   }
+  //Initialiation
   init_rdft(taille, x->bitshuffle, x->weighting);  
+  //Dupplication
   for ( i = 0 ; i < taille ; i++){
 	dup_harmonie[i]=buff_in_harmonie[i];
 	dup_mod[i]=buff_in_mod[i];
   }
   // /*** OK JUSQUE ICI 
   
-  
-	for( i=0 ; i <taille;i+=2){
-		  buff_out[i]= dup_harmonie[i]*cos(dup_harmonie[i+1]);
-		  buff_out[i+1]=-dup_harmonie[i]*sin(dup_harmonie[i+1]);
-	  }
-	  rdft(taille,-1,buff_out,x->bitshuffle,x->weighting);
-	return w+6;
-	
-  /*
-  
-
-
-  NOPE
+  //Fenetrage => Modulation non pris en compte ?
   for (i = 0; i<taille; i++) {
-  x->window[i] = (float) (0.54-0.46*(cos (2*PI * i/taille)));
-  dup_harmonie[i] = (x->window[i])*(dup_harmonie[i]);
-  dup_mod[i]=(x->window[i])*(dup_mod[i]);
- }
+	x->window[i] = (float) (0.54-0.46*(cos (TWOPI * i/taille))); // HAMING
+	//x->window[i] = (float) (0.42 - 0.5*cos(TWOPI *(i/taille))+0.08*cos(2*TWOPI*(i/taille))); //BlackMan 
+	dup_harmonie[i] = (x->window[i])*(dup_harmonie[i]);
+	dup_mod[i]=(x->window[i])*(dup_mod[i]);
+  }
   
+  //APplication de rdft sur les dup 
+   rdft(taille, 1, dup_harmonie, x->bitshuffle, x->weighting);
+   rdft(taille,1,dup_mod,x->bitshuffle,x->weighting);
   
-  rdft(taille, 1, dup_harmonie, x->bitshuffle, x->weighting);
-  rdft(taille,1,dup_mod,x->bitshuffle,x->weighting);
-  //tailleFFT a definir
+  //Conversion des valeurs complexes vers des valeurs polaires
   float a1,b1,a2,b2;
   for ( i=0 ; i<taille;i+=2){
 	  a1= dup_harmonie[i]; b1 =dup_harmonie[i+1];
@@ -101,8 +74,11 @@ t_int           *shaping_tilde_perform(t_int *w){
 	  dup_mod[i]=distance_euclidienne(a2,b2);
 	  dup_mod[i+1]= -atan2(b2,a2);
   }
-   float ampSum,freqSum,factor;
-  for ( i = 0 ; i<taille ; i+= shapeWidth*2){
+  
+  //Application du facteur de modulation => fait planter PD => ShapeWidth n'est pas initialisée correctement
+  // Dépasse la taille du buffer ><
+
+   for ( i = 0 ; i<taille ; i+= shapeWidth*2){
 	  ampSum=0;freqSum=0;
 	  for(j=0 ; j<shapeWidth*2;j+=2){
 		  ampSum+=dup_mod[i+j];
@@ -112,19 +88,25 @@ t_int           *shaping_tilde_perform(t_int *w){
 	  for( j =0 ; j<shapeWidth*2;j+=2){
 		  dup_harmonie[i+j]*=factor;
 	  }
-	  
-	  OK
-	  for( i=0 ; i <taille;i+=2){
+  }
+  
+  //Ecriture du resultat
+	for( i=0 ; i <taille;i+=2){
 		  buff_out[i]= dup_harmonie[i]*cos(dup_harmonie[i+1]);
 		  buff_out[i+1]=-dup_harmonie[i]*sin(dup_harmonie[i+1]);
-	  }
+	 }
+  //Application de fft inversée
 	  rdft(taille,-1,buff_out,x->bitshuffle,x->weighting);
-	  //Normalisation Later
-	 
-  }
-   return w+6;
-*/
+	  
+  //Normalisation 
+	if (x->autonorm==1){
 	
+	}
+	
+  // liberation de mémoire
+	free(dup_harmonie);
+	free(dup_mod);
+	return w+6;		
 }
 
 /*
@@ -156,11 +138,11 @@ void            *shaping_tilde_new(void){
 	d->buffer=(float*) malloc (4096 * sizeof(float));
 	d->bitshuffle = (int*) malloc (4096 * sizeof( int));
 	d->weighting = (float*) malloc (4096 * sizeof (long int));
-	d->tailleFFT = 0;
-
-	// inlet principal = x_in_harm ? pas besoin de le créé si oui	
+	d->window = (float*) malloc(4096* sizeof(long int));
+	d->tailleFFT = 4096;
 	d->x_in_mod =inlet_new(&d->x_obj, &d->x_obj.ob_pd,
              &s_signal,  &s_signal);
+	d->f = 1;
     floatinlet_new(&d->x_obj,&d->f);
 	d->x_in_mess=inlet_new(&d->x_obj, &d->x_obj.ob_pd,
              gensym("list"), gensym("messages"));// pas sur de la creation des inlet de type message
