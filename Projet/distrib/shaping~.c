@@ -32,13 +32,19 @@ t_int           *shaping_tilde_perform(t_int *w){
   float shapeWidth = (float)x->f;
   t_sample *buff_out = (t_sample*) w[4];
   int taille = (int) w[5];
-  taille = 2048;
+  taille = 4096;
   t_sample*dup_harmonie = malloc (taille * sizeof (long int));
   t_sample*dup_mod = malloc (taille * sizeof (long int));
   int i =0;
   int j =0;
   float ampSum,freqSum,factor;
   if (x->bypass==1){
+	if (x->autonorm == 1) {
+	 for ( i = 0 ; i < taille ; i++)
+		  buff_out[i] = buff_in_harmonie[i];
+	return w+6;
+	}
+	
     for ( i = 0 ; i < taille ; i++)
 		  buff_out[i] = buff_in_harmonie[i];
 	  return w+6;
@@ -99,8 +105,10 @@ t_int           *shaping_tilde_perform(t_int *w){
 	  rdft(taille,-1,buff_out,x->bitshuffle,x->weighting);
 	  
   //Normalisation 
-	if (x->autonorm==1){
 	
+	if (x->autonorm == 1) {
+	 for ( i = 0 ; i < taille ; i++)
+		  buff_out[i] = buff_out[i]/50;
 	}
 	
   // liberation de mémoire
@@ -143,6 +151,7 @@ void            *shaping_tilde_new(void){
 	d->x_in_mod =inlet_new(&d->x_obj, &d->x_obj.ob_pd,
              &s_signal,  &s_signal);
 	d->f = 1;
+	d->autonorm=1;
     floatinlet_new(&d->x_obj,&d->f);
 	d->x_in_mess=inlet_new(&d->x_obj, &d->x_obj.ob_pd,
              gensym("list"), gensym("messages"));// pas sur de la creation des inlet de type message
